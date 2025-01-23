@@ -2,6 +2,7 @@ import express from 'express';
 import { isAuth } from './middleware/auth.js';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
+import { deleteOldImage } from './util/file.js';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -53,6 +54,19 @@ app.use((req, res, next) => {
 
 app.use(isAuth);
 
+app.put('/post-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw new Error('Not Authenticated');
+  }
+  if (!req.file) {
+    return res.status(200).json({ message: 'No file provided' });
+  }
+  if (req.body.oldPath) {
+    deleteOldImage(req.body.oldPath);
+  }
+  return res.status(201).json({ message: 'File stored', filePath: req.file.path });
+});
+
 app.use(
   '/graphql',
   graphqlHTTP({
@@ -67,6 +81,7 @@ app.use(
       const data = err.originalError;
       const message = err.message || 'An error occurred';
       const status = err.originalError.code || 500;
+      console.log(message);
       return { message, status, data };
     },
   }),
@@ -86,3 +101,4 @@ mongoose
     app.listen(process.env.SERVER_PORT);
   })
   .catch((err) => console.log(err));
+

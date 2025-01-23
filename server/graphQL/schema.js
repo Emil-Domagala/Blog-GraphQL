@@ -1,6 +1,6 @@
 import { buildSchema } from 'graphql';
 
-export const schema = buildSchema(`
+const schema = buildSchema(`
 type Post{
     _id:ID!
     title:String!
@@ -20,21 +20,40 @@ type User{
     posts:[Post!]!
 }
 
+type AuthData{
+    token:String!
+    userId:String!
+}
+
+type PostData{
+    posts:[Post!]
+    totalPosts:Int!
+}
+
 input UserInputData{
     email: String!
     name: String!
     password: String!
 }
+input PostInputData{
+    title:String!
+    content:String!
+    imageUrl:String!
+}
 
 type RootQuery{
-    hello:String!
+    login(email:String!,password:String!): AuthData!
+    posts(page:Int):PostData!
 }
 
 type RootMutation{
     createUser(userInput:UserInputData): User!
+    createPost(postInput:PostInputData):Post!
 }
 schema{
     query:RootQuery
     mutation: RootMutation
 }
 `);
+
+export default schema;

@@ -1,15 +1,16 @@
 import express from 'express';
-
+import { isAuth } from './middleware/auth.js';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import multer from 'multer';
-import qraphqlHttp from 'express-graphql';
+import { graphqlHTTP } from 'express-graphql';
 import graphQlSchema from './graphQL/schema.js';
 import graphQlResolvers from './graphQL/resolvers.js';
-import { formatError } from 'graphql';
+import pkg from 'graphql';
+const { customFormatErrorFn } = pkg;
 
 dotenv.config();
 
@@ -42,18 +43,24 @@ app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,GET,POST,PUT,PATCH,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   next();
 });
 
+app.use(isAuth);
+
 app.use(
   '/graphql',
-  qraphqlHttp({
+  graphqlHTTP({
     schema: graphQlSchema,
     rootValue: graphQlResolvers,
     graphiql: true,
-    formatError(err) {
+    customFormatErrorFn(err) {
+      console.log('ERROR HANDLER IN APP.JS');
       if (!err.originalError) {
         return err;
       }
